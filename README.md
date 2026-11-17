@@ -1,112 +1,71 @@
 # Gabriel Castejon — Personal Portfolio
 
-A responsive React + TypeScript portfolio site showcasing experience, projects, skills, and resume.
+A React + TypeScript portfolio site showcasing experience, projects, skills, and resume.
 
 ## Stack
 
-- React 18 + TypeScript
-- React Router
-- React Bootstrap
-- Tailwind utility classes
-- CSS variable-based theming
-
-## Features
-
-- Multi-page layout: Home, About, Projects
-- Global route transitions between sections
-- Mobile-first responsive behavior (including hamburger navigation)
-- Data-driven projects and experience timelines
-- Skills modal and project media gallery support
-- Resume preview + download flow
+- React 18 + TypeScript (Create React App)
+- React Router (`HashRouter`, for GitHub Pages)
+- Tailwind CSS with CSS-variable design tokens (dark by default, light follows the system setting)
+- Geist / Geist Mono from Google Fonts
 
 ## Project Structure
 
 ```text
-backend/              # PersonalPortfolioBackend Git submodule
+backend/                  # PersonalPortfolioBackend Git submodule (data + resume)
 src/
 	Components/
-		Header/
-			Header.tsx
-			Footer.tsx
-		Pages/
-			MainPage.tsx
-			AboutMe.tsx
-			ProjectsPage.tsx
-		Project.tsx
+		Layout/               # Header, Footer
+		Home/                 # Hero, ExperienceTimeline, SelectedWork, Skills, ContactCta
+		Pages/                # HomePage, ProjectsPage, ProjectDetailPage, AboutPage
+		ui/                   # Icons, Reveal, SectionHeading, SkillChip
+		ProjectCard.tsx
 	Data/
-		api.ts
-		portfolioData.ts
+		api.ts                # loads the bundled backend snapshot
+		portfolioData.ts      # normalizes raw table-shaped JSON
+		portfolioData.test.ts # integrity checks for the snapshot
+		profile.ts            # site copy: hero, bio, education, community, links
 		types.ts
-	generated/             # populated from the backend submodule before build
-	Assets/
-		images/
-		docs/
-	themes.css
-	index.css
-	App.tsx
+	generated/              # populated from the backend submodule before start/build/test
+	index.css               # Tailwind layers + design tokens
 ```
 
 ## Getting Started
 
-### 1) Install dependencies
-
 ```bash
+git submodule update --init --recursive
 npm install
-```
-
-### 2) Run locally
-
-```bash
 npm start
 ```
 
-### 3) Build for production
-
-```bash
-npm run build
-```
+`npm test` runs integrity checks on the backend snapshot (unique slugs,
+every skill link resolves). The deploy workflow runs them before building.
 
 ## Content Management
 
-All site content first loads from a **Supabase database** via the client in
-`src/Data/api.ts`:
+The JSON files in the `PersonalPortfolioBackend` submodule are the single
+source of truth. There is no runtime database call: the data is bundled, so
+the site renders immediately.
 
-- **Projects**: Stored in the `projects` table, with technical skills associated via the `project_skills` join table (mapped using project and skill slugs).
-- **Experience Timeline**: Stored in the `experiences` table (ordered by `order_index`), with technical skills associated via the `experience_skills` join table (mapped using experience and skill slugs).
-- **Skills & Grouping**: Stored in the `skills` table, with categories managed via the `category` column and home page featured status managed via the `is_featured` column.
+- **Experiences, projects, skills** live in `backend/data/*.json`
+  (`experiences.json` is ordered by `order_index`; the first entry is shown as
+  the current role in the hero). Skill links live in `experience_skills.json`
+  and `project_skills.json`.
+- **Everything else** (hero headline, bio, education, community, contact
+  links) lives in `src/Data/profile.ts`.
+- **Resume** is `backend/GabrielCastejonSWE.pdf`, built from the `.tex` source.
 
-If Supabase is unavailable or does not respond within four seconds, the app
-uses a bundled snapshot generated from the `PersonalPortfolioBackend` submodule.
-The fallback is read from five raw table-shaped JSON files and normalized into
-the same data contract as the live response.
+`scripts/prepare-backend-assets.js` copies the snapshot and resume into
+`src/generated/backend` before start, build and test. The Pages workflow
+fetches the backend's latest `main` on every run, and the backend redeploys
+this site whenever `data/**` or the resume changes (its `notify-frontend.yml`
+and `build-resume.yml` workflows). After each successful deploy, the
+`bump-backend-pointer` job commits the deployed backend commit as this repo's
+submodule pointer, so `main` always matches what is live.
 
-The frontend repository includes `PersonalPortfolioBackend` at `backend/` as a
-Git submodule. Its latest `main` commit is fetched during the Pages build, and
-`scripts/prepare-backend-assets.js` copies the snapshot and canonical resume
-PDF into generated frontend source. Initialize the submodule before local
-development:
-
-```bash
-git submodule update --init --recursive
-```
-
-## Theming
-
-Global visual tokens live in:
-
-- `src/themes.css`
-
-Page and component styling then consume those CSS variables for gradients, glass surfaces, text contrast, and section transitions.
-
-## Routing
-
-The app uses `HashRouter` in `src/index.tsx`, which is friendly for static hosting environments.
-
-## Notes
-
-- Resume preview PDF is loaded from `src/Assets/docs/`.
-- External media (thumbnails/gallery assets) are loaded from configured URLs in project data.
-
+Locally, `npm run backend:latest` moves `backend/` to the backend's newest
+`main`. Running `git config submodule.recurse true` once makes `git pull` keep
+`backend/` in sync with the pointer automatically.
 
 # Getting Started with Create React App
 

@@ -16,6 +16,7 @@ export type RawProjectSkill = {
 
 export type RawProject = {
   slug: string;
+  created_at?: string | null;
   title: string;
   summary: string;
   description: string;
@@ -127,7 +128,14 @@ export function normalizePortfolioData(
   const skillsBySlug = new Map(skills.map((skill) => [skill.slug, skill]));
   const { projectSkills, experienceSkills } = createRelationshipMap(snapshot);
 
-  const projects = snapshot.projects.map((project) => {
+  const sortedProjects = [...snapshot.projects].sort((a, b) =>
+    (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+  );
+  const sortedExperiences = [...snapshot.experiences].sort(
+    (a, b) => a.order_index - b.order_index,
+  );
+
+  const projects = sortedProjects.map((project) => {
     const tech = (projectSkills.get(project.slug) ?? [])
       .map((skillSlug) => skillsBySlug.get(skillSlug))
       .filter((skill): skill is Skill => skill !== undefined);
@@ -144,7 +152,7 @@ export function normalizePortfolioData(
     };
   });
 
-  const experiences = snapshot.experiences.map((experience): Experience => {
+  const experiences = sortedExperiences.map((experience): Experience => {
     const tech = (experienceSkills.get(experience.slug) ?? [])
       .map((skillSlug) => skillsBySlug.get(skillSlug))
       .filter((skill): skill is Skill => skill !== undefined);
