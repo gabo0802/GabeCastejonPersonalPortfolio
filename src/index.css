@@ -2,39 +2,151 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Space Grotesk', 'Poppins', sans-serif;
-  background-color: #0b102a;
+/* ---------------------------------------------------------------------------
+   Design tokens (space-separated RGB so Tailwind opacity modifiers work).
+   Dark (navy, from the original site's #0b102a -> #101b47 gradient) is the
+   default; light follows the visitor's system setting.
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+  --bg: 8 12 30;
+  --surface: 13 20 46;
+  --surface-2: 19 29 64;
+  --line: 34 47 92;
+  --fg: 240 244 255;
+  --muted: 165 178 214;
+  --subtle: 114 128 172;
+  --accent: 110 160 255;
+  --accent-2: 150 200 255;
+  --accent-fg: 6 12 32;
 }
 
-html,
-body,
-#root {
-  max-width: 100%;
-  overflow-x: hidden;
-  background-color: #0b102a;
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: 246 248 255;
+    --surface: 255 255 255;
+    --surface-2: 236 241 255;
+    --line: 218 226 247;
+    --fg: 11 19 48;
+    --muted: 70 84 126;
+    --subtle: 108 120 158;
+    --accent: 37 99 235;
+    --accent-2: 79 70 229;
+    --accent-fg: 255 255 255;
+  }
 }
 
-body.modal-open {
-  overflow: hidden !important;
-  padding-right: 0 !important;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg font-sans text-fg antialiased;
+    font-feature-settings: "ss01", "cv11";
+    background-image: radial-gradient(
+      90rem 60rem at 100% 0%,
+      rgb(var(--accent) / 0.07),
+      transparent 60%
+    );
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-accent/30;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg;
+  }
 }
 
-.modal {
-  padding-right: 0 !important;
-  overflow-x: hidden !important;
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-page px-4 sm:px-6;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-accent-fg shadow-[0_0_24px_-6px_rgb(var(--accent)/0.6)] hover:bg-accent/85;
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-fg hover:border-accent/50 hover:bg-surface-2;
+  }
+
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-accent/50 hover:text-accent;
+  }
+
+  .eyebrow {
+    @apply font-mono text-xs uppercase tracking-[0.16em] text-accent;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(100deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  }
 }
 
-@media (max-width: 767px) {
-  .skills-modal-dialog {
-    width: calc(100vw - 2px) !important;
-    max-width: calc(100vw - 2px) !important;
-    margin: 1px auto !important;
+/* Subtle backdrop for the hero: accent glow + faded grid. */
+.hero-backdrop {
+  background-image:
+    radial-gradient(60rem 28rem at 50% -8rem, rgb(var(--accent) / 0.24), transparent 70%),
+    linear-gradient(rgb(var(--line) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--line) / 0.5) 1px, transparent 1px);
+  background-size: auto, 56px 56px, 56px 56px;
+  -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+}
+
+/* Scroll-reveal: pure CSS scroll-driven animation. Browsers without support
+   (or visitors who prefer reduced motion) simply see the content. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.route-fade {
+  animation: route-fade 280ms ease-out;
+}
+
+@keyframes route-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
@@ -42,57 +154,12 @@ body.modal-open {
   display: none;
 }
 
-.skills-modal-content {
-  background: var(--modal-bg);
-  color: var(--modal-text);
-  border: 1px solid var(--modal-border);
-  width: 100%;
-  overflow-x: hidden;
-}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 
-.skills-modal-content .modal-body {
-  overflow-x: hidden;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-.skills-modal-header,
-.skills-modal-footer {
-  background: var(--modal-header-bg);
-  border-color: var(--modal-border) !important;
-}
-
-.skills-modal-chip {
-  background: var(--skills-chip-bg);
-  border: 1px solid var(--modal-border);
-  max-width: 100%;
-}
-
-.skills-modal-muted {
-  color: var(--modal-muted);
-}
-
-.hero-greeting {
-  color: #f5f7ff !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-
-@media (min-width: 768px) {
-  .hero-greeting {
-    color: var(--hero-heading-text) !important;
-    text-shadow: none !important;
+  .route-fade {
+    animation: none;
   }
 }
-/* body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-} */

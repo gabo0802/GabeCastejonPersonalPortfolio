@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { Project, Experience, Skill } from "./types";
-import { fetchAllData } from "./api";
+import React, { createContext, useContext } from "react";
+import { Experience, Project, Skill } from "./types";
+import { loadPortfolioData } from "./api";
 
-type PortfolioData = {
+export type PortfolioData = {
   projects: Project[];
   experiences: Experience[];
   skills: Skill[];
@@ -10,51 +10,24 @@ type PortfolioData = {
   featuredSkills: Skill[];
 };
 
-type DataContextType = {
-  data: PortfolioData | null;
-  loading: boolean;
-  error: Error | null;
-};
+function buildPortfolioData(): PortfolioData {
+  const { projects, experiences, skills } = loadPortfolioData();
+  return {
+    projects,
+    experiences,
+    skills,
+    skillsBySlug: Object.fromEntries(skills.map((s) => [s.slug, s])),
+    featuredSkills: skills.filter((s) => s.isFeatured),
+  };
+}
 
-const DataContext = createContext<DataContextType>({
-  data: null,
-  loading: true,
-  error: null,
-});
+// Data is bundled with the app, so it is built once at module load.
+const portfolioData = buildPortfolioData();
+
+const DataContext = createContext<PortfolioData>(portfolioData);
 
 export const usePortfolioData = () => useContext(DataContext);
 
-export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [data, setData] = useState<PortfolioData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    fetchAllData()
-      .then((res) => {
-        const skillsBySlug = Object.fromEntries(res.skills.map((s) => [s.slug, s]));
-        const featuredSkills = res.skills.filter((s) => s.isFeatured);
-
-        setData({
-          projects: res.projects,
-          experiences: res.experiences,
-          skills: res.skills,
-          skillsBySlug,
-          featuredSkills,
-        });
-      })
-      .catch((err) => {
-        console.error("Failed to fetch data:", err);
-        setError(err instanceof Error ? err : new Error(String(err)));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
-
-  return (
-    <DataContext.Provider value={{ data, loading, error }}>
-      {children}
-    </DataContext.Provider>
-  );
-};
+export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <DataContext.Provider value={portfolioData}>{children}</DataContext.Provider>
+);
